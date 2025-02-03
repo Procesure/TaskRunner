@@ -1,7 +1,8 @@
 param(
+    [Parameter(Mandatory)]
     [string]$ExecutableCommand,
     [string]$SessionHost,
-    [boolean]$Interactive
+    [boolean]$Interactive = $false
 )
 
 function Get-MstscSessionId {
@@ -55,14 +56,17 @@ function Get-MostRecentActiveSessionID {
 
 $targetSessionId = $null
 
-if (not $Interactive) {
+if (-Not $Interactive) {
     $targetSessionId = 0
 } elseif ($SessionHost) {
     Write-Host "SessionHost provided: $SessionHost; searching for MSTSC session..."
-    $targetSessionId = Get-MstscSessionId
+    $targetSessionId = Get-MostRecentActiveSessionId # FIX LATER SHOULD IMPLEMENT LOGIC TO GET VALUE FROM SESSION HOST
     if ($null -eq $targetSessionId) {
-        Write-Host "No MSTSC session found for host $SessionHost. Defaulting to session 0."
-        $targetSessionId = 0
+        Write-Host "No MSTSC session found for host $SessionHost. Trying an active session."
+        $targetSessionId = Get-MostRecentActiveSessionId
+        if ($null -eq $targetSessionId) {
+            $targetSessionId = 0
+        }
     }
 } else {
     Write-Host "No SessionHost provided; attempting to get the most recent active session."

@@ -1,32 +1,33 @@
 param(
+    [Parameter(Mandatory)]
     [string]$ExecutableCommand,
-    [boolean]$Interactive,
-    [string]$RDPSessionHost,
-    [string]$RDPSessionSettings
+    [string]$SessionHost,
+    [boolean]$Interactive = $false,
+    [string]$InteractiveSessionSettings
 )
 
 Write-Host "=== Starting RDP script..."
 
 if ($Interactive -And $SessionHost) {
-    & "C:\Program Files\Procesure\StartRDPSession.ps1" -SessionHost $SessionHost -RDPSettings $RDPSessionSettings
+    & ".\StartRDPSession.ps1" -RDPHost $SessionHost -RDPSettings $InteractiveSessionSettings
 }
 
 Write-Host "First script finished. Continuing..."
 
 Write-Host "=== Running second script with -ExecutableCommand $ExecutableCommand..."
 
-if (not $Interactive) {
-    & "C:\Program Files\Procesure\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive False
+if (-Not $Interactive) {
+    & ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive $false
 }
 elseif ($Interactive -And $SessionHost) {
-    & "C:\Program Files\Procesure\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive True -SessionHost $SessionHost
+    & ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive $true -SessionHost $SessionHost
 }
 else {
-    & "C:\Program Files\Procesure\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive True
+    & ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive $true
 }
 
 if ($Interactive -And $SessionHost) {
-    & "C:\Program Files\Procesure\DisconnectRDPSession.ps1" -SessionHost $SessionHost
+    & ".\DisconnectRDPSession.ps1" -RDPHost $SessionHost
 }
 
 

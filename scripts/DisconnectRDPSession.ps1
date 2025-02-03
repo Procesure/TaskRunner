@@ -1,5 +1,6 @@
 param (
-    [string]$SessionHost
+    [Parameter(Mandatory)]
+    [string]$RDPHost
 )
 
 function Get-ProcessIDByIP {
@@ -8,7 +9,7 @@ function Get-ProcessIDByIP {
     )
 
     $connections = Get-NetTCPConnection -State Established
-    $filteredConnections = $connections | Where-Object { $_.RemoteAddress -eq $SessionHost }
+    $filteredConnections = $connections | Where-Object { $_.RemoteAddress -eq $RDPHost }
 
     $targetRDPClientPIDs = $filteredConnections | ForEach-Object {
         $_.OwningProcess
@@ -45,13 +46,13 @@ function Stop-ProcessByPID {
     }
 }
 
-if ($SessionHost) {
+if ($RDPHost) {
     $targetRDPClientPID = Get-ProcessIDByIP
     if ($targetRDPClientPID) {
-        Write-Output "Found PID $targetRDPClientPID for IP $SessionHost"
+        Write-Output "Found PID $targetRDPClientPID for IP $RDPHost"
         Stop-ProcessByPID -ProcessID $targetRDPClientPID
     } else {
-        Write-Output "No connection found for IP $SessionHost"
+        Write-Output "No connection found for IP $RDPHost"
     }
 } else {
     Write-Output "No Target IP provided."
