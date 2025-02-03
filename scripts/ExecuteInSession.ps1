@@ -10,7 +10,6 @@ function Get-MstscSessionId {
 
     $mstscProcesses = Get-CimInstance -ClassName Win32_Process -Filter "Name='mstsc.exe'"
     foreach ($proc in $mstscProcesses) {
-
         if ($proc.CommandLine -and $proc.CommandLine -match "/v:$SessionHost") {
             Write-Host "Found MSTSC process for host $SessionHost with SessionId: $($proc.SessionId)"
             return [int]$proc.SessionId
@@ -61,14 +60,14 @@ if (not $Interactive) {
 } elseif ($SessionHost) {
     Write-Host "SessionHost provided: $SessionHost; searching for MSTSC session..."
     $targetSessionId = Get-MstscSessionId
-    if ($targetSessionId -eq $null) {
+    if ($null -eq $targetSessionId) {
         Write-Host "No MSTSC session found for host $SessionHost. Defaulting to session 0."
         $targetSessionId = 0
     }
 } else {
     Write-Host "No SessionHost provided; attempting to get the most recent active session."
     $targetSessionId = Get-MostRecentActiveSessionId
-    if ($targetSessionId -eq $null) {
+    if ($null -eq $targetSessionId) {
         Write-Host "No active session found. Defaulting to session 0."
         $targetSessionId = 0
     }
@@ -76,7 +75,7 @@ if (not $Interactive) {
 
 Write-Host "Using session ID: $targetSessionId"
 
-$psexecPath = "C:\Program Files\Procesure\PsExec.exe"
+$psexecPath = "PsExec.exe"
 $arguments = "-s -i $targetSessionId cmd.exe /c `"$ExecutableCommand`""
 Write-Host "Executing command with PsExec: $psexecPath $arguments"
 
