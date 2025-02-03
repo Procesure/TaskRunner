@@ -20,7 +20,7 @@ function Convert-RdpStringToHashTable {
 
 
 function Format-MstscArgs {
-    $sessionArgs = "/v:$RDPHost"
+    $sessionArgs = ""
     $rdpSettingsHash = Convert-RdpStringToHashTable
     foreach ($k in $rdpSettingsHash.Keys) {
         $sessionArgs += " /$($k):$($rdpSettingsHash[$k])"
@@ -28,13 +28,15 @@ function Format-MstscArgs {
     return $sessionArgs
 }
 
+Write-Host "Start RDP signal received"
+
 $psexecPath = "C:\Program Files\Procesure\PsExec.exe"
 $mstscArgs = Format-MstscArgs
 
 Write-Host "Starting MSTSC with arguments: $mstscArgs"
 
-$psexecArgs = "-i 2 -d mstsc.exe  $mstscArgs"
-
+$psexecArgs = "-i 2 -d mstsc.exe /v:$RDPHost"
+Write-Host $psexecArgs
 Start-Process -FilePath $psexecPath -ArgumentList $psexecArgs -WindowStyle Hidden
 
 Start-Sleep -Seconds 10

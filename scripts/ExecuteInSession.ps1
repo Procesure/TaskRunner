@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory)]
     [string]$ExecutableCommand,
     [string]$SessionHost,
-    [boolean]$Interactive = $false
+    [switch]$Interactive
 )
 
 function Get-MstscSessionId {

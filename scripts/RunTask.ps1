@@ -2,14 +2,19 @@ param(
     [Parameter(Mandatory)]
     [string]$ExecutableCommand,
     [string]$SessionHost,
-    [boolean]$Interactive = $false,
+    [switch]$Interactive,
     [string]$InteractiveSessionSettings
 )
 
 Write-Host "=== Starting RDP script..."
 
 if ($Interactive -And $SessionHost) {
-    & ".\StartRDPSession.ps1" -RDPHost $SessionHost -RDPSettings $InteractiveSessionSettings
+    if ($InteractiveSessionSettings) {
+        & powershell.exe -ExecutionPolicy Bypass -File ".\StartRDPSession.ps1" -RDPHost $SessionHost -RDPSettings $InteractiveSessionSettings
+    } else {
+        & powershell.exe -ExecutionPolicy Bypass -File ".\StartRDPSession.ps1" -RDPHost $SessionHost
+    }
+    
 }
 
 Write-Host "First script finished. Continuing..."
@@ -17,19 +22,20 @@ Write-Host "First script finished. Continuing..."
 Write-Host "=== Running second script with -ExecutableCommand $ExecutableCommand..."
 
 if (-Not $Interactive) {
-    & ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive $false
+    & powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand
 }
 elseif ($Interactive -And $SessionHost) {
-    & ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive $true -SessionHost $SessionHost
+    & powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive -SessionHost $SessionHost
 }
 else {
-    & ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive $true
+    & powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive
 }
 
 if ($Interactive -And $SessionHost) {
-    & ".\DisconnectRDPSession.ps1" -RDPHost $SessionHost
+    & powershell.exe -ExecutionPolicy Bypass -File ".\DisconnectRDPSession.ps1" -RDPHost $SessionHost
 }
 
-
 Write-Host "All tasks done, exiting."
+
 exit 0
+
