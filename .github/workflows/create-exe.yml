@@ -2,7 +2,7 @@ name: Build and Release PowerShell EXE
 
 on:
   release:
-    types: [created]  # ✅ Runs after a GitHub release is created
+    types: [created, published, released]  # ✅ Runs after a GitHub release is created
 
 permissions:
   contents: write  # ✅ Ensures GitHub Actions can upload release assets
