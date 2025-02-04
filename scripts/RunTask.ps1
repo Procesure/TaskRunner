@@ -1,35 +1,45 @@
 param(
     [Parameter(Mandatory)]
-    [string]$ExecutableCommand,
+    [string]$ExecutableCMD,
     [string]$SessionHost,
     [switch]$Interactive,
-    [string]$InteractiveSessionSettings
+    [string]$CMDWorkingDir = $null,
+    [string]$InteractiveSessionSettings = $null
 )
 
 Write-Host "=== Starting RDP script..."
 
 if ($Interactive -And $SessionHost) {
     if ($InteractiveSessionSettings) {
-        & powershell.exe -ExecutionPolicy Bypass -File ".\StartRDPSession.ps1" -RDPHost $SessionHost -RDPSettings $InteractiveSessionSettings
+        if ($InteractiveSessionSettings) {
+            & powershell.exe -ExecutionPolicy Bypass -File ".\StartRDPSession.ps1" -RDPHost $SessionHost -RDPSettings $InteractiveSessionSettings
+        } else {
+            & powershell.exe -ExecutionPolicy Bypass -File ".\StartRDPSession.ps1" -RDPHost $SessionHost
+        }
     } else {
         & powershell.exe -ExecutionPolicy Bypass -File ".\StartRDPSession.ps1" -RDPHost $SessionHost
     }
-    
 }
 
 Write-Host "First script finished. Continuing..."
+Write-Host "=== Running second script with -ExecutableCMD $ExecutableCMD ..."
 
-Write-Host "=== Running second script with -ExecutableCommand $ExecutableCommand..."
+$executeArgs = @("-ExecutableCMD", "`"$ExecutableCMD`"")
 
-if (-Not $Interactive) {
-    & powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand
+if ($CMDWorkingDir -ne $null) {
+    $executeArgs += @("-CMDWorkingDir", "`"$CMDWorkingDir`"")
 }
-elseif ($Interactive -And $SessionHost) {
-    & powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive -SessionHost $SessionHost
+
+if ($Interactive) {
+    $executeArgs += "-Interactive"
 }
-else {
-    & powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" -ExecutableCommand $ExecutableCommand -Interactive
+
+if ($SessionHost) {
+    $executeArgs += @("-SessionHost", "`"$SessionHost`"")
 }
+
+Write-Host "Executing command: powershell.exe -ExecutionPolicy Bypass -File .\ExecuteInSession.ps1 $executeArgs"
+& powershell.exe -ExecutionPolicy Bypass -File ".\ExecuteInSession.ps1" @executeArgs
 
 if ($Interactive -And $SessionHost) {
     & powershell.exe -ExecutionPolicy Bypass -File ".\DisconnectRDPSession.ps1" -RDPHost $SessionHost
@@ -38,4 +48,3 @@ if ($Interactive -And $SessionHost) {
 Write-Host "All tasks done, exiting."
 
 exit 0
-

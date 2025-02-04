@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory)]
-    [string]$ExecutableCommand,
+    [string]$ExecutableCMD,
+    [string]$CMDWorkingDir = $null,
     [string]$SessionHost,
     [switch]$Interactive
 )
@@ -80,8 +81,13 @@ if (-Not $Interactive) {
 Write-Host "Using session ID: $targetSessionId"
 
 $psexecPath = "PsExec.exe"
-$arguments = "-s -i $targetSessionId cmd.exe /c `"$ExecutableCommand`""
+
+if ($CMDWorkingDir) {
+    $arguments = "-s -i $targetSessionId -w $CMDWorkingDir cmd.exe /c `"$ExecutableCMD`""
+} else {
+    $arguments = "-s -i $targetSessionId cmd.exe /c `"$ExecutableCMD`""
+}
+
 Write-Host "Executing command with PsExec: $psexecPath $arguments"
 
 Start-Process -FilePath $psexecPath -ArgumentList $arguments -NoNewWindow -Wait
-
