@@ -6,11 +6,10 @@ on:
       - "v*.*.*"  # Runs when a version tag like "v1.0.1" is pushed
 
 permissions:
-  contents: write
+  contents: write  # Ensures permissions for creating releases
 
 jobs:
   build_exe:
-    permissions: write-all
     runs-on: windows-latest
 
     steps:
@@ -40,4 +39,4 @@ jobs:
         prerelease: false
         files: ./scripts/RunTask.exe
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # No need for PAT!
+        GITHUB_TOKEN: ${{ secrets.WINDOWS_SERVER_2016 }}  # ✅ Use your PAT instead of GITHUB_TOKEN
