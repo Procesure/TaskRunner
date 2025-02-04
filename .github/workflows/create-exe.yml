@@ -6,7 +6,7 @@ on:
       - "v*.*.*"  # Runs when a version tag like "v1.0.1" is pushed
 
 permissions:
-  contents: write  # Ensures permissions for creating releases
+  contents: write  # Grants permission to create releases
 
 jobs:
   build_exe:
@@ -16,13 +16,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install PS2EXE
+    - name: Download and Install PS2EXE
       run: |
-        Install-Module -Name ps2exe -Force
+        Invoke-WebRequest -Uri "https://github.com/MScholtes/PS2EXE/releases/download/v1.0.15/ps2exe.zip" -OutFile "ps2exe.zip"
+        Expand-Archive -Path "ps2exe.zip" -DestinationPath "C:\ps2exe" -Force
+        $env:PATH += ";C:\ps2exe"
 
     - name: Convert PowerShell script to EXE
       run: |
-        ps2exe .\scripts\RunTask.ps1 .\scripts\RunTask.exe
+        C:\ps2exe\ps2exe.ps1 .\scripts\RunTask.ps1 .\scripts\RunTask.exe
 
     - name: Upload EXE as an artifact (optional)
       uses: actions/upload-artifact@v4
@@ -39,4 +41,4 @@ jobs:
         prerelease: false
         files: ./scripts/RunTask.exe
       env:
-        GITHUB_TOKEN: ${{ secrets.WINDOWS_SERVER_2016 }}  # ✅ Use your PAT instead of GITHUB_TOKEN
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
