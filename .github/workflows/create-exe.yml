@@ -1,11 +1,9 @@
 name: Build and Release PowerShell EXE
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Enter release version (e.g., v1.0.1)"
-        required: true
+  push:
+    tags:
+      - "v*.*.*"  # Runs when a version tag like "v1.0.1" is pushed
 
 jobs:
   build_exe:
@@ -32,11 +30,10 @@ jobs:
     - name: Create a GitHub Release and Upload EXE
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.event.inputs.version }}
-        release_name: "Release ${{ github.event.inputs.version }}"
-        body: "This is an automated release containing the compiled EXE."
+        tag_name: ${{ github.ref_name }}  # Uses the pushed Git tag as the release version
+        body: "Automatically generated release with compiled EXE."
         draft: false
         prerelease: false
         files: ./scripts/RunTask.exe
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # No need for PAT!
