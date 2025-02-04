@@ -5,6 +5,9 @@ on:
     tags:
       - "v*.*.*"  # Runs when a version tag like "v1.0.1" is pushed
 
+permissions:
+  contents: write
+
 jobs:
   build_exe:
     permissions: write-all
