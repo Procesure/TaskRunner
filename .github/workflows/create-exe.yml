@@ -1,10 +1,11 @@
 name: Build and Release PowerShell EXE
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Enter release version (e.g., v1.0.1)"
+        required: true
 
 jobs:
   build_exe:
@@ -13,26 +14,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    - name: Get Latest Release Version (PowerShell Fix)
-      id: get_version
-      shell: pwsh
-      run: |
-        $repo = "${{ github.repository }}"
-        $response = Invoke-WebRequest -Uri "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing | ConvertFrom-Json
-        $latestTag = $response.tag_name
-
-        if (-not $latestTag) {
-          $newVersion = "v1.0.0"
-        } else {
-          $versionParts = $latestTag -replace "v", "" -split "\."
-          $major = [int]$versionParts[0]
-          $minor = [int]$versionParts[1]
-          $patch = [int]$versionParts[2] + 1
-          $newVersion = "v$major.$minor.$patch"
-        }
-
-        echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
 
     - name: Install PS2EXE
       run: |
@@ -51,8 +32,8 @@ jobs:
     - name: Create a GitHub Release and Upload EXE
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ env.new_version }}
-        release_name: "Release ${{ env.new_version }}"
+        tag_name: ${{ github.event.inputs.version }}
+        release_name: "Release ${{ github.event.inputs.version }}"
         body: "This is an automated release containing the compiled EXE."
         draft: false
         prerelease: false
