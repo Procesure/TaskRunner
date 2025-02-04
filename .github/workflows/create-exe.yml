@@ -7,6 +7,7 @@ on:
 
 jobs:
   build_exe:
+    permissions: write-all
     runs-on: windows-latest
 
     steps:
