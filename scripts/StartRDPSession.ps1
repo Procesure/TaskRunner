@@ -35,7 +35,7 @@ $mstscArgs = Format-MstscArgs
 
 Write-Host "Starting MSTSC with arguments: $mstscArgs"
 
-$psexecArgs = "-i 3 -h -d mstsc.exe /v:$RDPHost"
+$psexecArgs = "-i 0 -h -d mstsc.exe /v:$RDPHost"
 Write-Host $psexecArgs
 Start-Process -FilePath $psexecPath -ArgumentList $psexecArgs -WindowStyle Hidden
 Write-Host "RDP Session Started"

@@ -1,87 +1,83 @@
-Below is an example of a README file in Markdown format that explains the purpose and features of your project:
-
----
-
 # Windows Task Session Executor
 
-This project is intended to help facilitate the execution of Windows Task Scheduler tasks in specific local sessions. It enables you to run both interactive and non-interactive tasks in designated sessions, allowing for more granular control over how and where your tasks are executed. In particular, it allows:
+**Goal**  
+Enable automated **interactive tasks** (i.e., tasks requiring a GUI) to run through **Task Scheduler**—even in scenarios where no user is actively logged on—by leveraging **PowerShell** and **PsExec**.
 
-- **Running Interactive Tasks in the Background:**  
-  Initiate RDP sessions with a GUI even when no user is actively logged in, enabling automated interactive tasks.
-  
-- **Launching RDP Sessions Programmatically:**  
-  Easily start an RDP session (with configurable resolution and other settings) via command-line or scripts, using tools like PsExec to ensure the process runs in the correct session.
-  
-- **Running Non-Interactive Tasks:**  
-  Execute tasks normally or target specific sessions, based on your requirements, without needing an active RDP connection.
+## Motivation
 
-## Features
+Traditionally, **Task Scheduler** tasks are non-interactive and cannot easily launch GUI applications when no user is logged in. This project overcomes that limitation by programmatically opening an **RDP session**, injecting commands into the chosen session, and then optionally disconnecting the session once tasks are complete. Whether you’re automating maintenance tasks that rely on a GUI, running an installer interactively, or performing visual tests, this project aims to provide a seamless way to handle “headless” GUI automation in Windows.
 
-- **Session-Specific Execution:**  
-  Run tasks in a specific session (or the most recent active session) determined dynamically, which is especially useful when tasks must interact with the GUI.
+## Key Features
 
-- **Parameter-Driven Workflow:**  
-  Configure and pass command-line parameters to dictate how tasks are executed (e.g., interactive vs. non-interactive mode, custom RDP settings, host alias, etc.).
+1. **Interactive Execution**  
+   - Dynamically open and configure RDP sessions to host GUI-based applications.  
+   - Execute your scripts or executables in an interactive environment as though a user were present.
 
-- **Integration with PsExec:**  
-  Leverage PsExec to run processes under different system accounts or in interactive sessions without having to hardcode credentials.
+2. **Non-Interactive Options**  
+   - Falls back to session 0 (standard background tasks) if you only need a command to run without showing any interface.
 
-- **Flexible Task Scheduling:**  
-  Designed to be integrated with Windows Task Scheduler, ensuring that tasks run correctly regardless of whether a user is logged in.
+3. **Configurable RDP Settings**  
+   - Pass custom resolution or display parameters (e.g., `w=1920,h=1080`) to tailor the RDP session’s environment.
 
-## Use Cases
+4. **Automated Cleanup**  
+   - Optionally disconnect the RDP session after execution, preventing idle sessions from lingering.
 
-- **Automated Maintenance:**  
-  Run interactive GUI applications in the background for automated maintenance or administrative tasks.
-  
-- **Remote Desktop Automation:**  
-  Initiate RDP sessions programmatically and attach interactive applications to those sessions, even when running in a headless or scheduled context.
-  
-- **Modular Task Execution:**  
-  Dynamically select and execute different scripts or functions based on parameters, making it easier to manage complex task flows.
+5. **Seamless Integration with Task Scheduler**  
+   - Each script can be triggered by scheduled tasks, so you can run interactive or non-interactive jobs on a schedule or upon system events.
+
+## Usage Overview
+
+1. **Provide the Executable or Script to Run**  
+   - Use **RunTask.ps1** (or the compiled equivalent) and pass the `-ExecutableCommand` parameter.
+
+2. **Optionally Supply RDP Details**  
+   - If you require an **interactive session** (GUI), specify `-Interactive`, plus the host or IP (`-SessionHost`), and any custom resolution (`-InteractiveSessionSettings "w=1366,h=768"`).
+
+3. **Task Scheduler Configuration**  
+   - Create a scheduled task pointing to **RunTask.ps1**.  
+   - For truly interactive tasks that show a GUI even without a logged user, you might set **“Run whether user is logged on or not.”** (Be aware of potential black-screen quirks in Windows session isolation—see “Limitations” below.)
+
+## Example Command
+
+```powershell
+.\RunTask.ps1 `
+  -ExecutableCommand "C:\MyTools\MyGUIApp.exe" `
+  -SessionHost "127.0.0.2" `
+  -Interactive `
+  -InteractiveSessionSettings "w=1920,h=1080"
+```
+
+1. **Starts** an RDP session with a 1920×1080 display to `127.0.0.2`.  
+2. **Runs** `MyGUIApp.exe` inside that session.  
+3. **Disconnects** the session if configured to do so.
 
 ## Requirements
 
-- **Windows Server or Desktop Environment** with Task Scheduler.
-- **PsExec** from the Sysinternals Suite (ensure its directory is in your PATH or use the full path).
-- **PowerShell 5.1** (or later) for script execution.
-- **(Optional) Python** if you are running Python scripts as part of your tasks.
-- Proper user credentials configured in Windows Credential Manager if running interactive sessions.
+- **Windows** (Server or Desktop)  
+- **PowerShell 5.1+**  
+- **PsExec** (from the [Sysinternals](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec) suite)  
+- **Administrative Privileges** may be needed for PsExec to inject processes.  
 
-## Installation
+## Limitations / Caveats
 
-1. **Clone or Download the Repository.**
-2. **Ensure all required tools are installed:**
-   - [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)
-   - PowerShell
-3. **Configure Environment Variables:**  
-   Optionally add the PsExec folder to your PATH for ease of use.
-4. **Set Up Task Scheduler:**  
-   Create tasks that point to the provided scripts. Use the wrapper script to combine multiple actions if necessary.
-
-## Usage
-
-### Running an Interactive Task
-To run an interactive task, use the provided wrapper script with parameters such as:
-```powershell
-.\Wrapper.ps1 -ExecutableCommand "C:\Path\To\YourExecutable.exe" -Interactive $true -RDPSessionHost "127.0.0.2" -RDPSessionSettings "w=1366,h=768"
-```
-
-### Running a Non-Interactive Task
-For non-interactive tasks, simply call:
-```powershell
-.\Wrapper.ps1 -ExecutableCommand "C:\Path\To\YourExecutable.exe" -Interactive $false
-```
+- **Session 0 Isolation**: Windows might show a black screen if you attempt to run MSTSC in a session with no real desktop. In many cases, a user must at least be auto-logged for the GUI to function normally.  
+- **Security**: Storing credentials or running as SYSTEM in a scheduled task can pose security risks. Ensure your environment and policies allow it.  
+- **Hardcoded Session IDs**: By default, some scripts may use a specific session ID (like `-i 3` in PsExec). Adjust if needed or adapt the logic to automatically find an active session.
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome!  
-Feel free to check [issues page](#) if you want to contribute.
+1. **Fork** this repo.  
+2. **Create a feature branch** for your changes (`feature/improvement`).  
+3. **Open a Pull Request** describing your updates.
 
 ## License
 
-This project is licensed under the MIT License.
+Licensed under the **[MIT License](LICENSE)**. Feel free to use and modify the code for your own projects, subject to the license terms.
+
+## Contact
+
+If you encounter issues or want to propose enhancements, open an **Issue** in this repository. Feedback and pull requests are welcome.
 
 ---
 
-This README provides a high-level overview of what the project does, how it works, its use cases, and how to set it up. You can adjust and expand this README to match the specifics of your project and its implementation details.
+**Enjoy scheduling GUI tasks without an active user logged on!**
