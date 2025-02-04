@@ -1,12 +1,11 @@
 name: Build and Release PowerShell EXE
 
 on:
-  push:
-    tags:
-      - "v*.*.*"  # Runs when a version tag like "v1.0.1" is pushed
+  release:
+    types: [created]
 
 permissions:
-  contents: write  # Grants permission to create releases
+  contents: write
 
 jobs:
   build_exe:
@@ -26,19 +25,12 @@ jobs:
       run: |
         C:\ps2exe\ps2exe.ps1 .\scripts\RunTask.ps1 .\scripts\RunTask.exe
 
-    - name: Upload EXE as an artifact (optional)
-      uses: actions/upload-artifact@v4
-      with:
-        name: executable
-        path: ./scripts/RunTask.exe
-
-    - name: Create a GitHub Release and Upload EXE
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref_name }}  # Uses the pushed Git tag as the release version
-        body: "Automatically generated release with compiled EXE."
-        draft: false
-        prerelease: false
-        files: ./scripts/RunTask.exe
+    - name: Upload EXE as Release Asset
+      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./scripts/RunTask.exe
+        asset_name: RunTask.exe
+        asset_content_type: application/octet-stream
