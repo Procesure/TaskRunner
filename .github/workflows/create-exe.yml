@@ -15,15 +15,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Download and Install PS2EXE
+    - name: Install PS2EXE manually
       run: |
-        Invoke-WebRequest -Uri "https://github.com/MScholtes/PS2EXE/releases/download/v1.0.15/ps2exe.zip" -OutFile "ps2exe.zip"
-        Expand-Archive -Path "ps2exe.zip" -DestinationPath "C:\ps2exe" -Force
+        New-Item -ItemType Directory -Path "C:\ps2exe" -Force
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MScholtes/PS2EXE/master/ps2exe.ps1" -OutFile "C:\ps2exe\ps2exe.ps1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MScholtes/PS2EXE/master/ps2exe.psm1" -OutFile "C:\ps2exe\ps2exe.psm1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MScholtes/PS2EXE/master/ps2exe.exe" -OutFile "C:\ps2exe\ps2exe.exe"
         $env:PATH += ";C:\ps2exe"
 
     - name: Convert PowerShell script to EXE
       run: |
-        C:\ps2exe\ps2exe.ps1 .\scripts\RunTask.ps1 .\scripts\RunTask.exe
+        powershell.exe -ExecutionPolicy Bypass -File "C:\ps2exe\ps2exe.ps1" .\scripts\RunTask.ps1 .\scripts\RunTask.exe
 
     - name: Upload EXE as Release Asset
       uses: actions/upload-release-asset@v1
