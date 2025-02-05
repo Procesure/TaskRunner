@@ -2,11 +2,10 @@ name: Build and Release PowerShell EXE
 
 on:
   release:
-    types: [created, published, released
-    ]  # ✅ Runs after a GitHub release is created
+    types: [created, published, released]  # Runs after a GitHub release is created
 
 permissions:
-  contents: write  # ✅ Ensures GitHub Actions can upload release assets
+  contents: write  # Allows upload of release assets
 
 jobs:
   build_exe:
@@ -24,12 +23,17 @@ jobs:
       run: |
         ps2exe .\scripts\RunTask.ps1 .\scripts\RunTask.exe
 
-    - name: Upload EXE as Release Asset
+    - name: Zip the EXE
+      shell: pwsh
+      run: |
+        Compress-Archive -Path .\scripts\RunTask.exe -DestinationPath .\scripts\RunTask.zip -Force
+
+    - name: Upload ZIP as Release Asset
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # ✅ Uses GitHub token for an existing release
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./scripts/RunTask.exe
-        asset_name: RunTask.exe
-        asset_content_type: application/octet-stream
+        asset_path: ./scripts/RunTask.zip
+        asset_name: RunTask.zip
+        asset_content_type: application/zip
