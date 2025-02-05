@@ -2,10 +2,10 @@ name: Build and Release PowerShell EXE
 
 on:
   release:
-    types: [created, published, released]  # Runs after a GitHub release is created
+    types: [published]
 
 permissions:
-  contents: write  # Allows upload of release assets
+  contents: write
 
 jobs:
   build_exe:
@@ -35,5 +35,5 @@ jobs:
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./scripts/RunTask.zip
-        asset_name: RunTask.zip
+        asset_name: TaskRunner.zip
         asset_content_type: application/zip
