@@ -1,108 +1,107 @@
-# Windows Interactive Task Runner
+# Windows Task Runner
 
-A simple wrapper project that allows you to run Windows tasks **interactively** using Task Scheduler—even when **no user** is logged into the machine. This solves a common Windows challenge: launching interactive tasks in the background, without storing credentials externally or relying on an active user session.
+Easily run **interactive (GUI)** tasks via the Windows Task Scheduler—even when no one is logged on. This uses **only** native Windows RDP—no extra tools or external credential storage.
 
 ---
 
 ## Motivation
 
-Running interactive tasks on Windows via Task Scheduler can be cumbersome, especially if **no user is logged on**. This project tackles that problem by providing a lightweight way to **simulate an interactive session** under the hood—leveraging native Windows tools—so you can confidently schedule scripts or applications that require desktop interaction.
+By default, Windows Task Scheduler does **not** allow GUI tasks when nobody is logged in. This project creates a **local** RDP session on `127.0.0.2` or any other loopback address, allowing graphical applications to run unattended. It also works for non-interactive jobs, providing a **single solution** for all scheduled tasks.
 
 ---
 
 ## Features
 
-- **Windows-Native Tools Only**  
-  No need for extra frameworks or third-party service managers. Everything is done using standard Windows utilities like PsExec.
-  
-- **No External Credential Storage**  
-  You supply credentials in Task Scheduler itself (username, password, and “host” alias, typically `127.0.0.2`).
+- **Run GUI Tasks**  
+  Start GUI-based apps (e.g., desktop automation or UI tests) without a manually logged-on user.  
+  - Technically, an “active” RDP session is created, but you don't need to **manually** log on—this is handled automatically by the script.
 
-- **Interactive or Non-Interactive Execution**  
-  - **Interactive**: Spin up a service-like session that allows UI-based or interactive processes (e.g., Python scripts that open GUIs, Notepad, etc.).  
-  - **Non-Interactive**: Run tasks silently in the background without any visible desktop interaction.
+- **No External Software**  
+  Only requires built-in Windows RDP—no additional tools like FreeRDP, port forwarding, or third-party vaults.
 
-- **Multiple Session Hosts**  
-  Easily configure different “host aliases” to run various tasks with different user contexts.
+- **Session Persistence**  
+  - You can connect locally (e.g., `127.0.0.2`) to **observe** the GUI.  
+  - Disconnect without terminating the session or the task.
 
-- **Runs Even When No User Is Logged On**  
-  You can schedule tasks that depend on interactive sessions without waiting for a specific user to be physically logged in.
+- **Automated Session Switching**  
+  If a user session is currently active, it is disconnected to free up the GUI context. The new session then runs your interactive task.
 
-- **PsExec Dependency**  
-  Leverages **PsExec** under the hood to create and manage interactive sessions.  
+- **No Plain-Text Credentials**  
+  Credentials live in the standard Windows Credential Manager.
 
 ---
 
 ## Requirements
 
-1. **PsExec** (from [Sysinternals](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)) must be installed or available in your `PATH`.
-2. **Windows Credentials** for the user who will run the task:
-   - Username
-   - Password
-   - “Host” (usually `127.0.0.2` or the local machine name)
-3. **Task Scheduler** to set up the scheduled job.  
-4. **Windows OS** (tested on modern versions like Windows Server 2016/2019/2022, Windows 10/11, etc.).
+1. **Enable Concurrent RDP Sessions**  
+   - **Best practice**: allow multiple (or at least two) RDP sessions in Local/Group Policy.  
+   - If only a single session is allowed, once someone manually logs in via RDP, it might disconnect the session hosting your interactive task.
 
----
+2. **Windows Credential for Loopback**  
+   - Create a generic credential mapping a loopback address (e.g., `127.0.0.2`) to the user running the tasks.
 
-## Usage
-
-1. **Add to PATH (Optional)**  
-   Place `RunTask.exe` in a folder that’s part of your system `PATH` or reference it by its absolute path.
-
-2. **Set Up Your Scheduled Task**  
-   - Create a new task in Task Scheduler.
-   - Under **“Actions”**, call `RunTask.exe` with the desired parameters.
-   - Configure the task to **Run whether user is logged on or not** (to allow interactive or background mode).
-
-3. **Command Parameters**  
-   - **`-Interactive`**: Enables an interactive session for GUI-based or desktop-dependent processes.  
-   - **`-SessionHost "127.0.0.2"`**: Host alias (commonly `127.0.0.2`) to initiate the session.  
-   - **`-ExecutableCMD "somecommand.exe"`**: The actual executable or script to run (include path if needed).  
-   - **`-CMDWorkingDir "C:\Your\WorkingDirectory"`** *(Optional)*: Set a working directory before running the command.
-
----
-
-## Example
-
-Suppose you have a Python virtual environment and script located at  
-`C:\Users\Administrator\Desktop\rdp-test\main.py`. You want to run it interactively so it can display windows or access desktop components. The command might look like this:
-
-```powershell
-RunTask.exe `
-  -Interactive `
-  -SessionHost "127.0.0.2" `
-  -CMDWorkingDir "C:\Users\Administrator\Desktop\rdp-test" `
-  -ExecutableCMD "venv\Scripts\python.exe main.py"
-```
-
-When scheduled in Task Scheduler, this will **start an interactive session** in the background and **run your Python script**, even if nobody is logged in.
+3. **RDP Config File (Mandatory for Interactive Tasks)**  
+   - Provide a `.rdp` file (pointing to your chosen loopback IP) to the script via `-RDPConfig`.  
+   - You can also use this file to manually RDP in to see what’s running.
 
 ---
 
 ## How It Works
 
-1. **Starts RDP Session** (if `-Interactive` is used)  
-   Leverages PsExec and other native tools to create an interactive-like session under the specified user context.
-2. **Executes the Provided Command**  
-   Launches your script or executable within that session.
-3. **Optionally Disconnects** the Session  
-   If configured, the session terminates after the process completes, freeing resources.
+1. **Disconnect Existing Session**  
+   The script logs off any currently active session of the same user.
+
+2. **Establish Loopback RDP**  
+   It then launches `mstsc.exe` pointing to the loopback address (e.g., `127.0.0.2`), using stored Windows credentials. The GUI process starts in this new session.
+
+3. **Optional Monitoring**  
+   Connect to the same `.rdp` file to watch the task. Disconnect at any time—your task keeps running.
+
+4. **Non-Interactive**  
+   For headless jobs, you can omit the `-RDPConfig` parameter and run them in the background.
 
 ---
 
-## License and Contributing
+## Usage Example (Task Scheduler)
 
-- If you find improvements or fixes, feel free to open a pull request or contribute your own scripts.  
+1. **Create a Scheduled Task**  
+   - **Action**: “Start a program”  
+   - **Program/Script**:  
+     ```
+     C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+     ```
+   - **Arguments**:  
+     ```
+     .\RunTask.ps1 -TaskName "BlocoDeNotasMain" -RDPConfig "C:\Users\YourUserName\Desktop\Default.rdp"
+     ```
+   - **Start in**:  
+     ```
+     C:\Users\YourUserName\Documents\dev\WindowsInteractiveTask\scripts
+     ```
+   - **Run whether user is logged on or not**: checked
+
+2. **Optional**: Convert to `.exe`  
+   - Install ps2exe and convert the script:  
+     ```
+     Install-Module -Name ps2exe -Force
+     ps2exe .\scripts\RunTask.ps1 .\scripts\RunTask.exe
+     ```
+   - Reference that `.exe` in your Task Scheduler configuration if you prefer.
 
 ---
 
-## Closing Notes
+## License
 
-**Windows Interactive Task Runner** removes the complexity of launching interactive processes on Windows servers. It’s particularly handy for automation, UI testing, or any script requiring a desktop. With minimal setup and no external credential storage, you can **securely** run tasks in a user context—even when the user isn’t physically logged on.
+Provided as-is, with no specific license. Use it freely within your environment—no warranties or guarantees.
 
-Happy automating!
+---
 
---- 
+## Contributing
 
-> **Disclaimer**: Always be cautious with credentials and interactive sessions on production environments. Ensure your tasks and user permissions align with your organization’s security policies.
+All suggestions are welcome! Open an issue or pull request to enhance or fix interactive session management.
+
+---
+
+### Disclaimer
+
+Review your organization’s security requirements before using. This script changes how RDP sessions are handled—make sure it aligns with your policies.
