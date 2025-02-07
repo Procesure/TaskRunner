@@ -33,6 +33,8 @@ By default, Windows Task Scheduler does **not** allow GUI tasks when nobody is l
 
 ## Requirements
 
+## Requirements
+
 1. **Enable Concurrent RDP Sessions**  
    - **Best practice**: allow multiple (or at least two) RDP sessions in Local/Group Policy.  
    - If only a single session is allowed, once someone manually logs in via RDP, it might disconnect the session hosting your interactive task.
@@ -43,6 +45,11 @@ By default, Windows Task Scheduler does **not** allow GUI tasks when nobody is l
 3. **RDP Config File (Mandatory for Interactive Tasks)**  
    - Provide a `.rdp` file (pointing to your chosen loopback IP) to the script via `-RDPConfig`.  
    - You can also use this file to manually RDP in to see what’s running.
+
+4. **Grant “Log on as a batch job” Right**  
+   - In **Security Settings → Local Policies → User Rights Assignment**, ensure the user account that runs these tasks is explicitly added to **“Log on as a batch job.”**  
+   - Without this, the system may block non-interactive or scheduled runs, resulting in access errors.
+
 
 ---
 
