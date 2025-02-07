@@ -64,31 +64,56 @@ By default, Windows Task Scheduler does **not** allow GUI tasks when nobody is l
 
 ## Usage Example (Task Scheduler)
 
-1. **Create a Scheduled Task**  
-   - **Action**: “Start a program”  
-   - **Program/Script**:  
-     ```
-     C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
-     ```
-   - **Arguments**:  
-     ```
-     .\RunTask.ps1 -TaskName "BlocoDeNotasMain" -RDPConfig "C:\Users\YourUserName\Desktop\Default.rdp"
-     ```
-   - **Start in**:  
-     ```
-     C:\Users\YourUserName\Documents\dev\WindowsInteractiveTask\scripts
-     ```
-   - **Run whether user is logged on or not**: checked
+Below you can find the steps to run any given task using TaskRunner:
 
-2. **Optional**: Convert to `.exe`  
-   - Install ps2exe and convert the script:  
-     ```
-     Install-Module -Name ps2exe -Force
-     ps2exe .\scripts\RunTask.ps1 .\scripts\RunTask.exe
-     ```
-   - Reference that `.exe` in your Task Scheduler configuration if you prefer.
+### 1. Create Your Target Task (No Schedule Yet)
+- **Example Name**: `TypeIntoNotepad`  
+- **Action**: Points to your actual script/application (e.g., “type text into Notepad”).  
+- **Scheduling**: Leave it as “Run on demand” or no schedule.  
+- **Note**: Do **not** set any schedule on this task; it’s the underlying action to be triggered by TaskRunner.
+
+### 2. Create a Wrapper Task Using TaskRunner to Call the Target Task
+- **Example Name**: `TypeIntoNotepad-Runner`  
+- **Action**: “Start a program”  
+  - **Program/Script**:  
+    ```
+    C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+    ```
+  - **Arguments**:  
+    ```
+    .\RunTask.ps1 -TaskName "TypeIntoNotepad" -RDPConfig "C:\Users\YourUserName\Desktop\Default.rdp"
+    ```
+  - **Start In**:  
+    ```
+    C:\Users\YourUserName\Documents\dev\WindowsInteractiveTask\scripts
+    ```
+- **Run whether user is logged on or not**: checked  
+- **Scheduling**: Configure this TaskRunner for daily, weekly, or any desired schedule.  
+- **Behavior**: When triggered, TaskRunner executes:
+  ```
+  schtasks /run /tn "TypeIntoNotepad"
+  ```
+  behind the scenes.
+
+### 3. (Optional) Convert the Script to an `.exe`
+If you’d prefer a single executable over a `.ps1`:
+
+1. Install ps2exe:
+   ```powershell
+   Install-Module -Name ps2exe -Force
+   ```
+2. Convert the script:
+   ```powershell
+   ps2exe .\scripts\RunTask.ps1 .\scripts\RunTask.exe
+   ```
+3. Update your TaskRunner to reference the generated `.exe` instead of the `.ps1`.
 
 ---
+
+### How It Works
+- **TaskRunner** is the task that actually has a schedule.  
+- On trigger, **TaskRunner** runs **`RunTask.ps1 (or .exe)`**, which then calls your **target task** (e.g., `TypeIntoNotepad`).  
+- If `-RDPConfig` is supplied, TaskRunner sets up an **interactive RDP session**, allowing GUI-based tasks to run even when no one is logged on.
 
 ## License
 

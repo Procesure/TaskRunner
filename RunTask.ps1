@@ -6,11 +6,7 @@ param(
 
 Start-Transcript -Path "C:\ProgramData\TaskRunner\TaskRunner.log" -Append -Force
 
-function Get-ProcessIDByIP {
-
-    param (
-        [string]$IP
-    )
+function Get-ProcessID {
 
     $rdpHost = Select-String -Path $RDPConfig -Pattern "^full address:s:(.+)$" | ForEach-Object { $_.Matches.Groups[1].Value }
 
@@ -85,7 +81,7 @@ function Disconnect-RDPSession {
 
     Write-Host "Disconnecting target RDP Session"
 
-    $targetRDPClientPID = Get-ProcessIDByIP
+    $targetRDPClientPID = Get-ProcessID
     if ($targetRDPClientPID) {
         Write-Output "Found PID $targetRDPClientPID for IP $RDPHost"
         Stop-ProcessByPID -ProcessID $targetRDPClientPID
@@ -107,10 +103,11 @@ function Wait-TaskCompletion {
     Write-Host "Waiting for task '$TaskName' to complete..."
 
     do {
-        Start-Sleep -Seconds 5  # Adjust sleep time as needed
-        $taskStatus = schtasks /query /tn $TaskName /fo LIST /v | Select-String "Running"
 
-    } while ($null -ne $taskStatus)
+        Start-Sleep -Seconds 5
+        $taskStatus = schtasks /query /tn $TaskName /fo LIST /v | Select-String "Status"
+
+    } while ($taskStatus -match "Running")
 
     Write-Host "Task '$TaskName' has completed."
 
@@ -121,7 +118,6 @@ Write-Host "Run Task Event Received"
 $sessionInfo = query user
 Write-Host "=== Session Info Before Task Execution ==="
 Write-Host $sessionInfo
-
 
 if ($RDPConfig) {
     Disconnect-UserSessions
